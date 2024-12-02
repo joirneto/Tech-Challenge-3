@@ -22,9 +22,9 @@ generation_config = GenerationConfig(
 )
 
 # Função de tradução
-def generate_response(text, max_length=100):
+def generate_response(text, max_length=128):
     # Codificar o texto
-    input_ids = tokenizer(text, return_tensors="pt", padding=True, truncation=True, max_length=128)["input_ids"]
+    input_ids = tokenizer(text, return_tensors="pt", padding=True, truncation=True, max_length=max_length)["input_ids"]
 
     # Gere a tradução com a configuração de geração
     outputs = model.generate(input_ids=input_ids, generation_config=generation_config)
