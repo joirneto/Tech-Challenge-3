@@ -57,16 +57,18 @@ tokenized_datasets = dataset.map(preprocess_function, batched=True)
 train_dataloader = DataLoader(tokenized_datasets, batch_size=16, shuffle=True, pin_memory=True)
 
 training_args = TrainingArguments(
-    output_dir="./results",
+    output_dir="./data/results",
+    save_steps=1000,
+    save_total_limit=1,
     learning_rate=3e-5,
     per_device_train_batch_size=8,  
-    per_device_eval_batch_size=8, 
+    per_device_eval_batch_size=8,   
     num_train_epochs=1,
     weight_decay=0.01,
     logging_dir='./logs',
     logging_steps=1000,
     fp16=True,  
-    gradient_accumulation_steps=4, 
+    gradient_accumulation_steps=4,  
 )
 
 # Inicializar o Trainer
