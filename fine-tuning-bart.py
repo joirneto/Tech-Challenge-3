@@ -7,21 +7,14 @@ import pandas as pd
 from accelerate import Accelerator
 from torch.utils.data import DataLoader
 
-# Dataset
-file_path = './data/trn_sanitized.json'
-all_dataset = load_dataset('json', data_files=file_path)
-shuffled_dataset = all_dataset['train'].shuffle(seed=42)
-
-# Pegar 10% do dataset
-dataset = shuffled_dataset.select(range(int(0.1 * len(shuffled_dataset))))
-
 # Inicializar Accelerator
 accelerator = Accelerator(mixed_precision='fp16')
 
 # Carregar o tokenizer e o modelo BART
-model_name = 'facebook/bart-base'  # Caso tenha mais recursos, pode usar 'facebook/bart-large'
+model_name = 'facebook/bart-base'  # Você pode usar 'facebook/bart-large' se tiver recursos para isso
 tokenizer = BartTokenizer.from_pretrained(model_name)
 model = BartForConditionalGeneration.from_pretrained(model_name)
+
 
 # Definir
 model.config.decoder_start_token_id = tokenizer.cls_token_id
@@ -31,13 +24,24 @@ model.config.eos_token_id = tokenizer.sep_token_id
 
 # Configuração opcional para evitar avisos
 model.config.vocab_size = len(tokenizer) 
+model.gradient_checkpointing_enable()
+
+
+file_path = './data/trn_clean.json'
+
+all_dataset = load_dataset('json', data_files=file_path)
+
+dataset = all_dataset['train'].shuffle(seed=42)
+
+# Pegar 10% do dataset
+# dataset = shuffled_dataset.select(range(int(0.1 * len(shuffled_dataset))))
 
 def preprocess_function(examples):
     # Extrair inputs e targets
     inputs = examples["title"]
     targets = examples["content"]
     
-    max_length = 512  # Definir tamanho máximo
+    max_length = 256  # Definir tamanho máximo
     # Tokenizar inputs
     model_inputs = tokenizer(inputs, padding="max_length", truncation=True, max_length=max_length)
     
@@ -61,7 +65,7 @@ training_args = TrainingArguments(
     save_steps=1000,
     save_total_limit=1,
     learning_rate=3e-5,
-    per_device_train_batch_size=8,  
+    per_device_train_batch_size=4,  
     per_device_eval_batch_size=8,   
     num_train_epochs=1,
     weight_decay=0.01,
@@ -82,5 +86,5 @@ torch.cuda.empty_cache()
 torch.cuda.ipc_collect()
 trainer.train()
 
-trainer.save_model("./models-tuned/bart/model")
-tokenizer.save_pretrained("./models-tuned/tokenizer")
+trainer.save_model("./models-tuned/bart-100/model")
+tokenizer.save_pretrained("./models-tuned/bart-100/tokenizer")
